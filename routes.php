@@ -7,9 +7,9 @@ $baseUrl = substr($url, 0, $indexPHPPosition); //lấy ký tự trong chuỗi, 0
 if (substr($baseUrl, -1) !== '/') {
     $baseUrl =  $baseUrl . "/";
 }
-
+define('BASE_URL', $baseUrl);
 $route = null;
-$_SESSION['redirectTarget'] = $baseUrl . 'index.php';
+// $_SESSION['redirectTarget'] = $baseUrl . 'index.php';
 
 if (false !== $indexPHPPosition) {
     $route = substr($url, $indexPHPPosition); // lấy từ vị trí số $indexPHPPosition trở đi
@@ -21,14 +21,15 @@ $userId = getCurrentUserId(); // tạo user ảo
 $countCartItems = countProductsInCart($userId); // đếm số giỏ hàng trong user đó;
 
 if (!$route) {
+    $_SESSION['redirectTarget'] = $baseUrl . 'index.php';
     $products = getAllProduct();
     require __DIR__ . '/templates/main.php';
     exit();
 }
 
 if (strpos($route, "/cart/add/") !== false) {
-    $routeParts = explode("/", $route);
-    $productId = $routeParts[3];
+    redirectIfNotLogged($route);
+    $productId = basename($route);
     addProductToCart($userId, $productId);
     header("Location:" . $baseUrl . "index.php");
     exit();
@@ -42,7 +43,7 @@ if (strpos($route, "/cart") !== false) {
 }
 
 if (strpos($route, '/login') !== false) {
-    if (isset($_SESSION['userId'])) {
+    if (isLoggedIn()) {
         header("Location: " . $baseUrl . 'index.php');
         exit();
     }
@@ -72,7 +73,7 @@ if (strpos($route, '/login') !== false) {
             $_SESSION['userId'] = $userData['id'];
             // moveCartProductsToAnotherUser($_COOKIE['userId'], $userData['id']);
             // setcookie('userId', $userData['id'], $baseUrl);
-            $redirectTarget = $baseUrl . 'index.php';
+            $redirectTarget = $_SESSION['redirectTarget'];
             header("Location: " .   $redirectTarget);
             exit();
         }
@@ -83,52 +84,44 @@ if (strpos($route, '/login') !== false) {
 }
 
 if (strpos($route, '/logout') !== false) {
+    // $redirectTarget = $baseUrl . 'index.php';
+    // if (isset($_SESSION['redirectTarget'])) {
+    //     $redirectTarget =  $_SESSION['redirectTarget'];
+    // }
     session_regenerate_id(true);
     session_destroy();
-    $redirectTarget = $baseUrl . 'index.php';
-    if (isset($_SESSION['redirectTarget'])) {
-        $redirectTarget =  $_SESSION['redirectTarget'];
-        echo $redirectTarget;
-    }
-    header("Location: " .  $redirectTarget);
+    redirectIfNotLogged();
+    header("Location: " . $_SESSION['redirectTarget']);
     exit();
 }
 
 if (strpos($route, '/checkout') !== false) {
+    redirectIfNotLogged($route);
+    $countCartItems = getCartSumForUserId($userId);
     $recipient = '';
     $city = '';
     $street = '';
     $streetNumber = '';
     $zipCode = '';
-    if (!isLoggedIn()) {
-        $_SESSION['redirectTarget'] = $baseUrl . 'index.php/checkout';
-        header("Location: " . $baseUrl . "index.php/login");
-        exit();
-    }
     $deliveryAddresses = getDeliveryAddressForUser($userId);
     require_once __DIR__ . '/templates/selectDeliveryAddress.php';
     exit();
 }
 
 if (strpos($route, '/selectDeliveryAddress') !== false) {
-    if (!isLoggedIn()) {
-        $_SESSION['redirectTarget'] = $baseUrl . 'index.php/checkout';
-        header("Location: " . $baseUrl . "index.php/login");
+    redirectIfNotLogged($route);
+    $deliveryAddressId = basename($route);
+    if (deliveryAddressBelongsToUser($deliveryAddressId, $userId)) {
+        $_SESSION['deliveryAddressId'] = $deliveryAddressId;
+        header('Location: ' . $baseUrl . 'index.php/selectPayment');
         exit();
     }
-    $deliveryAddressId = basename($route);
-    $_SESSION['deliveryAddressId'] = $deliveryAddressId;
-    header('Location: ' . $baseUrl . 'index.php/selectPayment');
+    header('Location: ' . $baseUrl . 'index.php/checkout');
     exit();
 }
 
 if (strpos($route, '/deliveryAddress/add') !== false) {
-    if (!isLoggedIn()) {
-        $_SESSION['redirectTarget'] = $baseUrl . 'index.php/deliveryAddress/add';
-        header('Location: ' . $baseUrl . 'index.php/login');
-        return [];
-    }
-
+    redirectIfNotLogged($route);
     $recipient = '';
     $city = '';
     $street = '';
@@ -143,6 +136,7 @@ if (strpos($route, '/deliveryAddress/add') !== false) {
 
     $isPost = isPost();
     $errors = [];
+    $deliveryAddresses = getDeliveryAddressForUser($userId);
 
     if ($isPost) {
         $recipient = filter_input(INPUT_POST, 'recipient', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -186,4 +180,32 @@ if (strpos($route, '/deliveryAddress/add') !== false) {
 
     require_once __DIR__ . '/templates/selectDeliveryAddress.php';
     exit();
+}
+
+if (strpos($route, '/selectPayment') !== false) {
+    redirectIfNotLogged($route);
+    $isPost = isPost();
+    if ($isPost) {
+        $_SESSION['paymentMethod'] = filter_input(INPUT_POST, 'paymentMethod', FILTER_SANITIZE_SPECIAL_CHARS);
+        header('Location: ' . $baseUrl . 'index.php/completeOrder');
+        exit();
+    }
+    require_once __DIR__ . '/templates/selectPayment.php';
+    exit();
+}
+
+if (strpos($route, '/completeOrder') !== false) {
+    redirectIfNotLogged($route);
+    if (!isset($_SESSION['paymentMethod'])) {
+        require_once __DIR__ . '/templates/selectPayment.php';
+        exit();
+    }
+
+    $userId = getCurrentUserId();
+    $cartItems = getCartItemsForUserId($userId);
+    if (createOrder($userId, $cartItems)) {
+        clearCartForUser($userId);
+        require_once __DIR__ . "/templates/thankYouPage.php";
+        exit();
+    }
 }

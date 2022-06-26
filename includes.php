@@ -5,4 +5,5 @@ require_once __DIR__ . '/function/user.php';
 require_once __DIR__ . '/function/product.php';
 require_once __DIR__ . '/function/utilities.php';
 require_once __DIR__ . '/function/deliveryAddress.php';
+require_once __DIR__ . '/function/orders.php';
 require_once __DIR__ . '/routes.php';

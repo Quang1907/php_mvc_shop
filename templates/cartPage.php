@@ -20,7 +20,14 @@ include __DIR__ . '/inc/navbar.php'
         <span>Tổng <?= $countCartItems; ?> sản phẩm: <span class="fw-bold"><?= $cartSum; ?> VND</span></span>
     </div>
     <div class=" row">
-        <a href="index.php/checkout" class="btn btn-primary col-12">Thanh Toán</a>
+        <?php if ($countCartItems > 0) : ?>
+            <a href="index.php/checkout" class="btn btn-primary col-12">Thanh Toán</a>
+        <?php else : ?>
+            <a href="index.php/checkout" class="btn btn-primary disabled col-12">Thanh Toán</a>
+            <div class="float-end mt-3">
+                <a href="index.php" class="btn btn-success col-3 float-end">Trở lại trang chủ</a>
+            </div>
+        <?php endif; ?>
     </div>
 </section>
 

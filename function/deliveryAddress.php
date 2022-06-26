@@ -16,7 +16,6 @@ function getDeliveryAddressForUser($userId)
     return $addresses;
 }
 
-
 function saveDeliveryAddressForUser($userId, $recipient, $city, $street, $streetNumber, $zipCode)
 {
     $sql = 'INSERT INTO delivery_address SET user_id = :userId, recipient = :recipient, city = :city, street = :street, streetNumber = :streetNumber , zipCode = :zipCode';
@@ -32,6 +31,13 @@ function saveDeliveryAddressForUser($userId, $recipient, $city, $street, $street
     return $statement->execute($data);
 }
 
-function deliveryAddressBelongsToUser()
+function deliveryAddressBelongsToUser($deliveryAddressId, $userId)
 {
+    $sql = "SELECT id FROM delivery_address where user_id = :userId AND id = :deliveryAddress";
+    $statement = getDB()->prepare($sql);
+    if (false === $statement) {
+        return [];
+    }
+    $statement->execute([':userId' => $userId, ':deliveryAddress' => $deliveryAddressId]);
+    return $statement->rowCount();
 }

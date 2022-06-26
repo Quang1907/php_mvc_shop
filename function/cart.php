@@ -4,10 +4,17 @@ function addProductToCart(int $userId, int $productId, int $quantity = 1)
     if (null === $userId) {
         return [];
     }
-    $sql = "INSERT INTO cart 
-    set quantity = :quantity, user_id = :userId, product_id = :productId 
-    ON DUPLICATE KEY UPDATE quantity = quantity + 1
-    ";
+    $check = "SELECT count(id) FROM cart WHERE user_id ='" . $userId . "' and product_id = '" . $productId . "'";
+    $statement = getDB()->query($check)->fetchColumn();
+    if ($statement == 0) {
+        $sql = "INSERT INTO cart 
+        set quantity = :quantity, user_id = :userId, product_id = :productId";
+    } else {
+        $sql = "UPDATE cart SET quantity = quantity + :quantity WHERE user_id = :userId AND product_id = :productId";
+    }
+    // $sql = "INSERT INTO cart 
+    // set quantity = :quantity, user_id = :userId, product_id = :productId 
+    // ON DUPLICATE KEY UPDATE quantity = quantity + :quantity";
     $statement = getDB()->prepare($sql);
     $data = [
         ':userId' => $userId,
@@ -68,16 +75,24 @@ function getCartSumForUserId($userId)
     return $result;
 }
 
-
-function moveCartProductsToAnotherUser($sourceUserId, $targetUserId)
+function deleteProductInCartForUserId($userId, $productId)
 {
-    $sql = "UPDATE cart SET user_id = :targetUserId WHERE user_id = :sourceUserId";
+    $sql = 'DELETE FROM cart WHERE user_id = :userId and product_id = :producId';
     $statement = getDB()->prepare($sql);
-    if (false === $statement) {
-        return null;
+    if ($statement === false) {
+        return [];
     }
-    return  $statement->execute([
-        ':targetUserId' => $targetUserId,
-        ':sourceUserId' => $sourceUserId,
-    ]);
+    $data = [
+        ':userId' => $userId,
+        ':productId' => $productId,
+    ];
+
+    return $statement->execute($data);
+}
+
+function clearCartForUser($userId)
+{
+    $sql = "DELETE FROM CART WHERE user_id = :userId";
+    $statement = getDB()->prepare($sql);
+    $statement->execute([':userId' => $userId]);
 }

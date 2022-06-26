@@ -36,4 +36,24 @@ CREATE TABLE IF NOT EXISTS delivery_address(
     streetNumber VARCHAR(50),
     zipCode VARCHAR(50),
     FOREIGN KEY delivery_address(user_id) REFERENCES users(id)
+) ENGINE = INNODB;
+
+-- order
+CREATE TABLE IF NOT EXISTS orders (
+    id INT(10) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    orderDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status ENUM ('paymentOnDelivery'),
+    user_id INT(10) NOT NULL,
+    FOREIGN KEY ORDERS(user_id) REFERENCES USERS(id)
+) ENGINE = INNODB;
+
+-- order_product
+CREATE TABLE IF NOT EXISTS ORDER_PRODUCT(
+    id INT(10) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(50) NOT NULL,
+    quantity INT(10) NOT NULL,
+    price INT(10) NOT NULL,
+    taxInPercent INT(10) NOT NULL,
+    order_id INT(10) NOT NULL,
+    FOREIGN KEY ORDER_PRODUCT(order_id) REFERENCES ORDERS(id) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE = INNODB

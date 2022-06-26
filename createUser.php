@@ -5,8 +5,8 @@ ini_set('display_errors', 'On');
 
 define('CONFIG_DIR', __DIR__ . '/config');
 require __DIR__ . '/function/database.php';
-$username = "quangcntt";
-$password = password_hash("123", PASSWORD_DEFAULT);
+$username = "quangcntt1";
+$password = password_hash("1234", PASSWORD_DEFAULT);
 $sql = "INSERT INTO users  SET 
             username = '" . $username . "',
             password = '" . $password . "';";
