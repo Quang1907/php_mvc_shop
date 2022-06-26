@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- delivery_address
 CREATE TABLE IF NOT EXISTS delivery_address(
     id INT(10) NOT NULL PRIMARY KEY AUTO_INCREMENT,
-    user_id INT(10) NOT NULL UNIQUE,
+    user_id INT(10) NOT NULL,
     recipient TEXT NOT NULL,
     city TEXT NOT NULL,
     street TEXT NOT NULL,

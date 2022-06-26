@@ -1,4 +1,5 @@
 <?php
+$title = "Trang chu";
 $url = $_SERVER['REQUEST_URI']; // lay url trang
 $indexPHPPosition =  strpos($url, 'index.php'); // kiem tra xem index.php nam tai vi tri so may
 $baseUrl = substr($url, 0, $indexPHPPosition); //lấy ký tự trong chuỗi, 0 vị trí bắt đầu, $indexPHPPosition vị trí kết thúc
@@ -69,7 +70,7 @@ if (strpos($route, '/login') !== false) {
         }
         if (0 === count($errors)) {
             $_SESSION['userId'] = $userData['id'];
-            moveCartProductsToAnotherUser($_COOKIE['userId'], $userData['id']);
+            // moveCartProductsToAnotherUser($_COOKIE['userId'], $userData['id']);
             // setcookie('userId', $userData['id'], $baseUrl);
             $redirectTarget = $baseUrl . 'index.php';
             header("Location: " .   $redirectTarget);
@@ -94,16 +95,34 @@ if (strpos($route, '/logout') !== false) {
 }
 
 if (strpos($route, '/checkout') !== false) {
+    $recipient = '';
+    $city = '';
+    $street = '';
+    $streetNumber = '';
+    $zipCode = '';
     if (!isLoggedIn()) {
+        $_SESSION['redirectTarget'] = $baseUrl . 'index.php/checkout';
         header("Location: " . $baseUrl . "index.php/login");
         exit();
     }
+    $deliveryAddresses = getDeliveryAddressForUser($userId);
     require_once __DIR__ . '/templates/selectDeliveryAddress.php';
     exit();
 }
 
-if (strpos($route, '/deliveryAddress/add') !== false) {
+if (strpos($route, '/selectDeliveryAddress') !== false) {
+    if (!isLoggedIn()) {
+        $_SESSION['redirectTarget'] = $baseUrl . 'index.php/checkout';
+        header("Location: " . $baseUrl . "index.php/login");
+        exit();
+    }
+    $deliveryAddressId = basename($route);
+    $_SESSION['deliveryAddressId'] = $deliveryAddressId;
+    header('Location: ' . $baseUrl . 'index.php/selectPayment');
+    exit();
+}
 
+if (strpos($route, '/deliveryAddress/add') !== false) {
     if (!isLoggedIn()) {
         $_SESSION['redirectTarget'] = $baseUrl . 'index.php/deliveryAddress/add';
         header('Location: ' . $baseUrl . 'index.php/login');
@@ -124,7 +143,7 @@ if (strpos($route, '/deliveryAddress/add') !== false) {
 
     $isPost = isPost();
     $errors = [];
-    $hasErrors  = false;
+
     if ($isPost) {
         $recipient = filter_input(INPUT_POST, 'recipient', FILTER_SANITIZE_SPECIAL_CHARS);
         $recipient = trim($recipient);
@@ -154,9 +173,16 @@ if (strpos($route, '/deliveryAddress/add') !== false) {
             $zipCodeIsValid = true;
         }
         if (count($errors) === 0) {
+            $deliveryAddressId = saveDeliveryAddressForUser($userId, $recipient, $city, $street, $streetNumber, $zipCode);
+            if ($deliveryAddressId > 0) {
+                $_SESSION['deliveryAddressId'] = $deliveryAddressId;
+                header('Location: ' . $baseUrl . 'index.php/selectPayment');
+                exit();
+            }
         }
     }
     $hasErrors = count($errors) > 0;
+    $deliveryAddresses = getDeliveryAddressForUser($userId);
 
     require_once __DIR__ . '/templates/selectDeliveryAddress.php';
     exit();

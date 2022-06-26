@@ -8,8 +8,8 @@ require __DIR__ . '/function/database.php';
 $username = "quangcntt";
 $password = password_hash("123", PASSWORD_DEFAULT);
 $sql = "INSERT INTO users  SET 
-        username = '" . $username . "',
-        password = '" . $password . "';";
+            username = '" . $username . "',
+            password = '" . $password . "';";
 $statement = getDB()->exec($sql);
 if (!$statement) {
     echo printDBErrorMessage();
