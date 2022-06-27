@@ -9,19 +9,16 @@ if (substr($baseUrl, -1) !== '/') {
 }
 define('BASE_URL', $baseUrl);
 $route = null;
-// $_SESSION['redirectTarget'] = $baseUrl . 'index.php';
 
 if (false !== $indexPHPPosition) {
     $route = substr($url, $indexPHPPosition); // lấy từ vị trí số $indexPHPPosition trở đi
     $route = str_replace('index.php', '', $route); //  thay ký tự index.php bằng '' trong chuỗi route;
-    // $_SESSION['redirectTarget'] = $baseUrl . 'index.php' . $route;
 }
 
 $userId = getCurrentUserId(); // tạo user ảo
 $countCartItems = countProductsInCart($userId); // đếm số giỏ hàng trong user đó;
 
 if (!$route) {
-    $_SESSION['redirectTarget'] = $baseUrl . 'index.php';
     $products = getAllProduct();
     require __DIR__ . '/templates/main.php';
     exit();
@@ -47,7 +44,6 @@ if (strpos($route, '/login') !== false) {
         header("Location: " . $baseUrl . 'index.php');
         exit();
     }
-    // strtoupper chuyen ky tu viet thuong thanh viet hoa
     $isPost = isPost();
     $username = "";
     $password = "";
@@ -88,6 +84,7 @@ if (strpos($route, '/logout') !== false) {
     // if (isset($_SESSION['redirectTarget'])) {
     //     $redirectTarget =  $_SESSION['redirectTarget'];
     // }
+
     session_regenerate_id(true);
     session_destroy();
     redirectIfNotLogged();
@@ -203,9 +200,31 @@ if (strpos($route, '/completeOrder') !== false) {
 
     $userId = getCurrentUserId();
     $cartItems = getCartItemsForUserId($userId);
+
     if (createOrder($userId, $cartItems)) {
         clearCartForUser($userId);
         require_once __DIR__ . "/templates/thankYouPage.php";
         exit();
     }
+}
+
+if (strpos($route, '/invoice') !== false) {
+    redirectIfNotLogged($route);
+    $routeParts = explode('/', $route);
+    $invoiceId = null;
+    if (isset($routeParts[2])) {
+        $invoiceId = $routeParts[2];
+    }
+    if (!$invoiceId) {
+        echo 'Hoá đơn ko được chỉ định';
+        exit();
+    }
+    $userId = getCurrentUserId();
+    $orderData = getOrderForUser($invoiceId, $userId);
+    if (!$orderData) {
+        echo 'Dữ liệu không tồn tại';
+        exit();
+    }
+    require_once __DIR__ . '/templates/invoice.php';
+    exit();
 }

@@ -7,9 +7,9 @@ function getCurrentUserId()
     if (isset($_SESSION['userId'])) {
         $userId = $_SESSION['userId'];
     }
-    // if (isset($_COOKIE['userId'])) {
-    //     $userId = $_COOKIE['userId'];
-    // }
+    if (isset($_COOKIE['userId'])) {
+        $userId = $_COOKIE['userId'];
+    }
 
     // session_destroy();
     // setcookie("userId", "", time() - 36000);
